@@ -1,0 +1,1 @@
+yt-dlp -cookies ./cookies.txt  -f "ba" -x --audio-format mp3 --audio-quality 0 -o "%(playlist_title)s/%(playlist_index)s - %(title)s.%(ext)s" "https://www.bilibili.com/video/BV1ba411V7XW"
