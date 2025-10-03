@@ -1,5 +1,4 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { HumanMessage } from "@langchain/core/messages";
 import { ReactAgent } from "../agent/react_agent_base";
 
 /**
@@ -30,22 +29,21 @@ async function main() {
     defaultThreadId: "debug-deepseek-thread",
   });
 
-  // Build a short conversation that benefits from memory.
-  const messages = [
-    new HumanMessage("My name is Jamie. Remember it."),
-    new HumanMessage("What's 12 * 8?"),
-    new HumanMessage("Great. What's my name?")
+  // Walk through a short conversation using the chat helper that auto-adds human messages.
+  const prompts = [
+    "My name is Jamie. Remember it.",
+    "What's 12 * 8?",
+    "Great. What's my name?",
   ];
 
-  const result = await agent.invoke(messages);
-
-  console.log("\nFinal agent state (messages):");
-  for (const message of result.messages) {
-    console.log(`- ${message.getType()}:`, message.content);
+  let lastResponse = "";
+  for (const input of prompts) {
+    lastResponse = await agent.chat(input);
+    console.log(`\nUser: ${input}`);
+    console.log(`Agent: ${lastResponse}`);
   }
 
-  const finalResponse = result.messages[result.messages.length - 1]?.content;
-  console.log("\nFinal response:", finalResponse);
+  console.log("\nFinal response:", lastResponse);
 }
 
 void main().catch((error) => {

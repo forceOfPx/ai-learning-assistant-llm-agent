@@ -1,3 +1,4 @@
+import { HumanMessage } from "@langchain/core/messages";
 import type { BaseMessage, BaseMessageLike } from "@langchain/core/messages";
 import type { LanguageModelLike } from "@langchain/core/language_models/base";
 import { MemorySaver } from "@langchain/langgraph";
@@ -117,6 +118,19 @@ export class ReactAgent {
     const state = await this.invoke(messages, options);
     const last = state.messages[state.messages.length - 1];
     return last ? messageContentToString(last) : "";
+  }
+
+  /**
+   * Convenience helper that sends a single user input to the agent and
+   * returns the model's textual reply.
+   */
+  async chat(userInput: string, options?: InvokeOptions): Promise<string> {
+    const responseState = await this.invoke([
+      new HumanMessage(userInput),
+    ], options);
+
+    const aiMessage = responseState.messages.at(-1);
+    return aiMessage ? messageContentToString(aiMessage) : "";
   }
 
   private applyThreadConfig(options?: Record<string, any>) {

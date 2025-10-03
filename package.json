@@ -3,7 +3,8 @@
     "clean": "rimraf dist .tmp-run",
     "build": "tsc --project tsconfig.json",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "example": "npm run build && node dist/debug/react_agent_example.js"
+    "example": "npm run build && node dist/debug/react_agent_example.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@langchain/community": "^0.3.57",
@@ -14,6 +15,7 @@
   "devDependencies": {
     "@types/node": "^22.7.4",
   "rimraf": "^5.0.5",
+  "vitest": "^1.6.0",
     "tsx": "^4.19.1",
     "typescript": "^5.9.3"
   }
