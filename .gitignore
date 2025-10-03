@@ -1,3 +1,5 @@
 node_modules/
+dist/
+.tmp-run/
 *.m4a
 voice/group
