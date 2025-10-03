@@ -1,9 +1,24 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { SRT_CONTEXT_WINDOW } from "./const";
 
 type JsonRecord = Record<string, unknown>;
 
 const TIMESTAMP_REGEX = /^(\d{2}:\d{2}:\d{2},\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2},\d{3})/;
+
+type SrtEntry = {
+	start: number;
+	end: number;
+	timestampLine: number;
+	entryLines: { lineNumber: number; content: string }[];
+};
+
+type SrtCacheValue = {
+	version: number;
+	lines: string[];
+	entries: SrtEntry[];
+};
+
+const srtCache = new Map<string, SrtCacheValue>();
 
 function parseTimestamp(value: string): number | null {
 	const match = value.match(
@@ -28,8 +43,65 @@ function parseTimestamp(value: string): number | null {
 }
 
 function loadSrtLines(filePath: string): string[] {
+	return getSrtData(filePath).lines;
+}
+
+function extractEntries(lines: string[]): SrtEntry[] {
+	const entries: SrtEntry[] = [];
+
+	for (let i = 0; i < lines.length; i += 1) {
+		const match = lines[i].match(TIMESTAMP_REGEX);
+		if (!match) {
+			continue;
+		}
+
+		const start = parseTimestamp(match[1]);
+		const end = parseTimestamp(match[2]);
+
+		if (start === null || end === null) {
+			continue;
+		}
+
+		let entryStart = i;
+		while (entryStart > 0 && lines[entryStart - 1].trim().length > 0) {
+			entryStart -= 1;
+		}
+
+		const entryLines: { lineNumber: number; content: string }[] = [];
+		let cursor = entryStart;
+
+		while (cursor < lines.length && lines[cursor].trim().length > 0) {
+			entryLines.push({ lineNumber: cursor + 1, content: lines[cursor] });
+			cursor += 1;
+		}
+
+		entries.push({
+			start,
+			end,
+			timestampLine: i,
+			entryLines,
+		});
+	}
+
+	return entries;
+}
+
+function getSrtData(filePath: string): SrtCacheValue {
+	const stats = statSync(filePath);
+	const version = stats.mtimeMs;
+	const cached = srtCache.get(filePath);
+
+	if (cached && cached.version === version) {
+		return cached;
+	}
+
 	const content = readFileSync(filePath, "utf-8");
-	return content.split(/\r?\n/);
+	const lines = content.split(/\r?\n/);
+	const entries = extractEntries(lines);
+	const value: SrtCacheValue = { version, lines, entries };
+
+	srtCache.set(filePath, value);
+	return value;
 }
 
 // todo: getLineNumberAtTimestamp 应该用二分查找
@@ -46,40 +118,25 @@ export function getLineNumberAtTimestamp(
 			};
 		}
 
-		const lines = loadSrtLines(filePath);
-		for (let i = 0; i < lines.length; i += 1) {
-			const match = lines[i].match(TIMESTAMP_REGEX);
-			if (!match) {
+		const { entries } = getSrtData(filePath);
+		let left = 0;
+		let right = entries.length - 1;
+		while (left <= right) {
+			const mid = Math.floor((left + right) / 2);
+			const entry = entries[mid];
+			if (targetMs < entry.start) {
+				right = mid - 1;
 				continue;
 			}
- 
-			const start = parseTimestamp(match[1]);
-			const end = parseTimestamp(match[2]);
-			if (start === null || end === null) {
+			if (targetMs > entry.end) {
+				left = mid + 1;
 				continue;
 			}
-
-			if (targetMs >= start && targetMs <= end) {
-				const entryLines: { lineNumber: number; content: string }[] = [];
-				let cursor = i - 1;
-
-				while (cursor >= 0 && lines[cursor].trim().length > 0) {
-					cursor -= 1;
-				}
-				cursor += 1;
-
-				while (cursor < lines.length && lines[cursor].trim().length > 0) {
-					entryLines.push({ lineNumber: cursor + 1, content: lines[cursor] });
-					cursor += 1;
-				}
-
-				const response: JsonRecord = {
-					success: true,
-					lineNumber: i + 1,
-					entry: entryLines,
-				};
-				return response;
-			}
+			return {
+				success: true,
+				lineNumber: entry.timestampLine + 1,
+				entry: entry.entryLines,
+			};
 		}
 
 		return {
