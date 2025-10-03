@@ -7,13 +7,10 @@ import { MemorySaver } from "@langchain/langgraph";
 import { StateGraph, MessagesAnnotation } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 
-import {
-	getLineNumberAtTimestampTool,
-	readNextLinesTool,
-	readPreviousLinesTool,
-} from "../tool/srt_tools";
+import { createSrtTools } from "../tool/srt_tools";
 import { createGetOutlineTool } from "../tool/simple_read_file_tool";
 import { ReactAgent } from "../agent/react_agent_base";
+import { th } from "zod/v4/locales";
 
 type CourseAgentOptions = {
 	/** Optional override for the chat model instance. */
@@ -21,16 +18,12 @@ type CourseAgentOptions = {
 	/** Optional thread identifier used for checkpointing. */
 	threadId?: string;
 	/** Optional absolute path to the course outline file used for reference. */
-	courseOutline?: string;
+	courseOutline: string;
+	/** Required absolute path to the SRT transcript for tool binding. */
+	srtPath: string;
 };
 
 const DEFAULT_THREAD_ID = "course-agent-thread";
-
-const BASE_COURSE_TOOLS: StructuredToolInterface[] = [
-	getLineNumberAtTimestampTool,
-	readPreviousLinesTool,
-	readNextLinesTool,
-];
 
 function createLlm(): ChatOpenAI {
 	const apiKey = process.env.DEEPSEEK_API_KEY;
@@ -48,22 +41,29 @@ function createLlm(): ChatOpenAI {
 	});
 }
 
-export function createCourseAgentGraph(options: CourseAgentOptions = {}) {
+export function createCourseAgentGraph(options: CourseAgentOptions) {
+	const { srtPath, courseOutline } = options;
+	if (!srtPath || !courseOutline) {
+		throw new Error("srtPath or courseOutline must be provided to createCourseAgentGraph.");
+	}
+
 	const llm = options.llm ?? createLlm();
 	const threadId = options.threadId ?? DEFAULT_THREAD_ID;
 	const checkpointer = new MemorySaver();
-	const tools: StructuredToolInterface[] = [...BASE_COURSE_TOOLS];
+	const tools: StructuredToolInterface[] = [...createSrtTools(srtPath)];
 
-	if (options.courseOutline) {
-		tools.push(createGetOutlineTool(options.courseOutline));
+	if (courseOutline) {
+		tools.push(createGetOutlineTool(courseOutline));
 	}
 
-	const outlineDirective = options.courseOutline
-		? `你可以随时读取课程大纲文件（路径：${options.courseOutline}）。`
+	const outlineDirective = courseOutline
+		? `你可以随时读取课程大纲文件（路径：${courseOutline}）。`
 		: "如果用户需要课程大纲，请提醒他们提供大纲文件路径。";
 
+	const transcriptDirective = `字幕内容位于 ${srtPath}，相关工具已经自动绑定该文件。`;
+
 	const prompt = new SystemMessage(
-		`你是一个助教，能够帮助学生解决学习中的问题，你可以使用工具来辅助完成任务。${outlineDirective}`
+		`你是一个助教，能够帮助学生解决学习中的问题，你可以使用工具来辅助完成任务。注意，你拿到的字幕文件并非人工打标，而是通过ASR自动转化的，所以可能存在一定的识别误差，在定位时应该首先参考时间信息。${outlineDirective} ${transcriptDirective}`
 	);
 
 	const reactAgent = new ReactAgent({
@@ -109,12 +109,15 @@ export function createCourseAgentGraph(options: CourseAgentOptions = {}) {
 async function runDemo() {
 	const srtPath = resolve(process.cwd(), "voice/01/01.srt");
 	const outlinePath = resolve(process.cwd(), "voice/01/outline.txt");
-	const app = createCourseAgentGraph({ courseOutline: outlinePath });
+	const app = createCourseAgentGraph({
+		courseOutline: outlinePath,
+		srtPath,
+	});
 
 	const initialState = await app.invoke({
 		messages: [
 			new HumanMessage(
-				`请帮我查找字幕文件 ${srtPath} 中时间戳 00:00:59,000 所在的行，并返回前后各两行上下文。`
+				`我目前处在 00:34:16,000 请详细解释一下“冗余自由度的消除”。`
 			),
 		],
 	});

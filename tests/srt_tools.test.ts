@@ -2,9 +2,9 @@ import { resolve } from "node:path";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 import {
-    getLineNumberAtTimestampTool,
-    readNextLinesTool,
-    readPreviousLinesTool,
+    createGetLineNumberAtTimestampTool,
+    createReadNextLinesTool,
+    createReadPreviousLinesTool,
 } from "../src/tool/srt_tools";
 import {
     setSrtContextWindow,
@@ -14,10 +14,18 @@ import {
 const SAMPLE_SRT_PATH = resolve(process.cwd(), "voice/01/01.srt");
 
 let originalWindow: number;
+const tools = {
+    getLineNumberAtTimestamp: null as ReturnType<typeof createGetLineNumberAtTimestampTool> | null,
+    readPreviousLines: null as ReturnType<typeof createReadPreviousLinesTool> | null,
+    readNextLines: null as ReturnType<typeof createReadNextLinesTool> | null,
+};
 
 beforeAll(() => {
     originalWindow = SRT_CONTEXT_WINDOW;
     setSrtContextWindow(2);
+    tools.getLineNumberAtTimestamp = createGetLineNumberAtTimestampTool(SAMPLE_SRT_PATH);
+    tools.readPreviousLines = createReadPreviousLinesTool(SAMPLE_SRT_PATH);
+    tools.readNextLines = createReadNextLinesTool(SAMPLE_SRT_PATH);
 });
 
 afterAll(() => {
@@ -26,8 +34,7 @@ afterAll(() => {
 
 describe("srt_tools wrappers", () => {
     it("returns JSON string from getLineNumberAtTimestampTool", async () => {
-        const raw = await getLineNumberAtTimestampTool.invoke({
-            filePath: SAMPLE_SRT_PATH,
+        const raw = await tools.getLineNumberAtTimestamp!.invoke({
             timestamp: "00:00:59,000",
         });
 
@@ -39,8 +46,7 @@ describe("srt_tools wrappers", () => {
     });
 
     it("returns JSON string from readPreviousLinesTool", async () => {
-        const raw = await readPreviousLinesTool.invoke({
-            filePath: SAMPLE_SRT_PATH,
+        const raw = await tools.readPreviousLines!.invoke({
             lineNumber: 102,
         });
 
@@ -50,8 +56,7 @@ describe("srt_tools wrappers", () => {
     });
 
     it("returns JSON string from readNextLinesTool", async () => {
-        const raw = await readNextLinesTool.invoke({
-            filePath: SAMPLE_SRT_PATH,
+        const raw = await tools.readNextLines!.invoke({
             lineNumber: 102,
         });
 

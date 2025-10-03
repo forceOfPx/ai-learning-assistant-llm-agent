@@ -46,6 +46,7 @@ function readTextFilePayload(filePath: string) {
 export const readTextFileTool = tool(
 	async (input) => {
 		const { filePath } = input as ReadTextFileArgs;
+		console.log("[tool:read_text_file]", JSON.stringify({ filePath }));
 		return jsonStringify(readTextFilePayload(filePath));
 	},
 	{
@@ -59,6 +60,10 @@ export function createGetOutlineTool(filePath: string) {
 	return tool(
 		async (input: unknown) => {
 			void (input as NoArgs);
+			console.log(
+				"[tool:get_course_outline]",
+				JSON.stringify({ filePath })
+			);
 			return jsonStringify(readTextFilePayload(filePath));
 		},
 		{
