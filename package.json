@@ -4,7 +4,7 @@
     "build": "tsc --project tsconfig.json",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "example": "npm run build && node dist/debug/react_agent_example.js",
-    "course": "npm run build && node dist/domain/course_agent.js",
+    "course": "npm run build && node dist/debug/course_agent_example.js",
     "test": "vitest run"
   },
   "dependencies": {
