@@ -1,5 +1,5 @@
 import { readFileSync, statSync } from "node:fs";
-import { SRT_CONTEXT_WINDOW } from "./const";
+import { SRT_CONTEXT_WINDOW, SRT_INIT_WINDOW } from "./const";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -104,8 +104,7 @@ function getSrtData(filePath: string): SrtCacheValue {
 	return value;
 }
 
-// todo: getLineNumberAtTimestamp 应该用二分查找
-export function getLineNumberAtTimestamp(
+export function getLinesAtTimestamp(
 	filePath: string,
 	timestamp: string
 ): JsonRecord {
@@ -118,7 +117,7 @@ export function getLineNumberAtTimestamp(
 			};
 		}
 
-		const { entries } = getSrtData(filePath);
+		const { lines, entries } = getSrtData(filePath);
 		let left = 0;
 		let right = entries.length - 1;
 		while (left <= right) {
@@ -132,10 +131,23 @@ export function getLineNumberAtTimestamp(
 				left = mid + 1;
 				continue;
 			}
+			
+			// 获取匹配的字幕条目的行号
+			const matchedLineNumber = entry.timestampLine + 1;
+			
+			// 计算前后扩展的范围
+			const startLineIndex = Math.max(0, matchedLineNumber - 1 - SRT_INIT_WINDOW);
+			const endLineIndex = Math.min(lines.length, matchedLineNumber - 1 + SRT_INIT_WINDOW + 1);
+			
+			// 提取扩展范围内的内容
+			const contextLines = lines.slice(startLineIndex, endLineIndex);
+			
 			return {
 				success: true,
-				lineNumber: entry.timestampLine + 1,
+				startLine: startLineIndex + 1,
+				endLine: endLineIndex,
 				entry: entry.entryLines,
+				contextLines: contextLines.join('\n'),
 			};
 		}
 

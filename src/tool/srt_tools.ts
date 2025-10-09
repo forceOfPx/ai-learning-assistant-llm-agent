@@ -2,7 +2,7 @@ import { tool } from "@langchain/core/tools";
 import type { JSONSchema } from "@langchain/core/utils/json_schema";
 
 import {
-	getLineNumberAtTimestamp,
+	getLinesAtTimestamp,
 	readNextLines,
 	readPreviousLines,
 } from "./read_srt";
@@ -54,23 +54,23 @@ function ensureFilePath(filePath: string) {
 	return filePath;
 }
 
-export function createGetLineNumberAtTimestampTool(filePath: string) {
+export function createGetLinesAtTimestampTool(filePath: string) {
 	const boundPath = ensureFilePath(filePath);
 	return tool(
 		async (input) => {
 			const { timestamp } = input as GetLineNumberAtTimestampArgs;
 			console.log(
-				"[tool:get_line_number_at_timestamp]",
+				"[tool:get_lines_at_timestamp]",
 				JSON.stringify({ filePath: boundPath, timestamp })
 			);
 			return jsonStringify(
-				getLineNumberAtTimestamp(boundPath, timestamp)
+				getLinesAtTimestamp(boundPath, timestamp)
 			);
 		},
 		{
-			name: "get_line_number_at_timestamp",
+			name: "get_lines_at_timestamp",
 			description:
-				"Given a timestamp (HH:MM:SS,mmm), return the matching subtitle entry and line number as JSON.",
+				"Given a timestamp (HH:MM:SS,mmm), return the matching subtitle entry with its line number, start/end line numbers, and surrounding context lines (including content from x lines before to x lines after the matched entry) as JSON.",
 			schema: getLineNumberAtTimestampSchema,
 		}
 	);
@@ -118,7 +118,7 @@ export function createReadNextLinesTool(filePath: string) {
 
 export function createSrtTools(filePath: string) {
 	return [
-		createGetLineNumberAtTimestampTool(filePath),
+		createGetLinesAtTimestampTool(filePath),
 		createReadPreviousLinesTool(filePath),
 		createReadNextLinesTool(filePath),
 	];

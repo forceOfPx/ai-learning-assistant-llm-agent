@@ -2,12 +2,13 @@ import { resolve } from "node:path";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 import {
-    getLineNumberAtTimestamp,
+    getLinesAtTimestamp,
     readNextLines,
     readPreviousLines,
 } from "../src/tool/read_srt";
 import {
     setSrtContextWindow,
+    setSrtInitWindow,
     SRT_CONTEXT_WINDOW,
 } from "../src/tool/const";
 
@@ -18,6 +19,7 @@ let originalWindow: number;
 beforeAll(() => {
     originalWindow = SRT_CONTEXT_WINDOW;
     setSrtContextWindow(3);
+    setSrtInitWindow(3);
 });
 
 afterAll(() => {
@@ -26,10 +28,12 @@ afterAll(() => {
 
 describe("read_srt tools", () => {
     it("locates the line number for a given timestamp", () => {
-        const result = getLineNumberAtTimestamp(SAMPLE_SRT_PATH, "00:00:59,000");
+        const result = getLinesAtTimestamp(SAMPLE_SRT_PATH, "00:00:59,000");
 
         expect(result.success).toBe(true);
-        expect(result.lineNumber).toBe(102);
+        expect(result.startLine).toBe(99);
+        expect(result.endLine).toBe(105);
+        expect(result.contextLines).toBeDefined();
 
         const entry = result.entry as Array<{ lineNumber: number; content: string }>;
         expect(entry).toBeDefined();
@@ -39,10 +43,12 @@ describe("read_srt tools", () => {
     });
 
     it("locates the line number for a given timestamp 2.", () => {
-        const result = getLineNumberAtTimestamp(SAMPLE_SRT_PATH, "01:06:20,980");
+        const result = getLinesAtTimestamp(SAMPLE_SRT_PATH, "01:06:20,980");
 
         expect(result.success).toBe(true);
-        expect(result.lineNumber).toBe(6878);
+        expect(result.startLine).toBe(6875);
+        expect(result.endLine).toBe(6881);
+        expect(result.contextLines).toBeDefined();
 
         const entry = result.entry as Array<{ lineNumber: number; content: string }>;
         expect(entry).toBeDefined();
@@ -52,10 +58,12 @@ describe("read_srt tools", () => {
     });
 
     it("locates the line number for a given timestamp 3.", () => {
-        const result = getLineNumberAtTimestamp(SAMPLE_SRT_PATH, "01:07:24,620");
+        const result = getLinesAtTimestamp(SAMPLE_SRT_PATH, "01:07:24,620");
 
         expect(result.success).toBe(true);
-        expect(result.lineNumber).toBe(7042);
+        expect(result.startLine).toBe(7039);
+        expect(result.endLine).toBe(7045);
+        expect(result.contextLines).toBeDefined();
 
         const entry = result.entry as Array<{ lineNumber: number; content: string }>;
         expect(entry).toBeDefined();

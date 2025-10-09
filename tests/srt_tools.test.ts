@@ -2,12 +2,13 @@ import { resolve } from "node:path";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 import {
-    createGetLineNumberAtTimestampTool,
+    createGetLinesAtTimestampTool,
     createReadNextLinesTool,
     createReadPreviousLinesTool,
 } from "../src/tool/srt_tools";
 import {
     setSrtContextWindow,
+    setSrtInitWindow,
     SRT_CONTEXT_WINDOW,
 } from "../src/tool/const";
 
@@ -15,7 +16,7 @@ const SAMPLE_SRT_PATH = resolve(process.cwd(), "voice/01/01.srt");
 
 let originalWindow: number;
 const tools = {
-    getLineNumberAtTimestamp: null as ReturnType<typeof createGetLineNumberAtTimestampTool> | null,
+    getLineNumberAtTimestamp: null as ReturnType<typeof createGetLinesAtTimestampTool> | null,
     readPreviousLines: null as ReturnType<typeof createReadPreviousLinesTool> | null,
     readNextLines: null as ReturnType<typeof createReadNextLinesTool> | null,
 };
@@ -23,7 +24,8 @@ const tools = {
 beforeAll(() => {
     originalWindow = SRT_CONTEXT_WINDOW;
     setSrtContextWindow(2);
-    tools.getLineNumberAtTimestamp = createGetLineNumberAtTimestampTool(SAMPLE_SRT_PATH);
+    setSrtInitWindow(2);
+    tools.getLineNumberAtTimestamp = createGetLinesAtTimestampTool(SAMPLE_SRT_PATH);
     tools.readPreviousLines = createReadPreviousLinesTool(SAMPLE_SRT_PATH);
     tools.readNextLines = createReadNextLinesTool(SAMPLE_SRT_PATH);
 });
@@ -42,7 +44,10 @@ describe("srt_tools wrappers", () => {
         const parsed = JSON.parse(raw as string);
 
         expect(parsed.success).toBe(true);
-        expect(parsed.lineNumber).toBe(102);
+        expect(parsed.startLine).toBe(100);
+        expect(parsed.endLine).toBe(104);
+        expect(parsed.contextLines).toBeDefined();
+        expect(typeof parsed.contextLines).toBe("string");
     });
 
     it("returns JSON string from readPreviousLinesTool", async () => {
