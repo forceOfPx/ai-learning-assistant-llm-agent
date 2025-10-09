@@ -3,3 +3,4 @@ dist/
 .tmp-run/
 *.m4a
 voice/group
+docs/

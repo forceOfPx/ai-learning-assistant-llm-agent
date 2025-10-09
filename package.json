@@ -5,20 +5,25 @@
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "example": "npm run build && node dist/debug/react_agent_example.js",
     "course": "npm run build && node dist/debug/course_agent_example.js",
+    "history": "npm run build && node dist/debug/chat_with_history_example.js",
+    "persist": "npm run build && node dist/debug/postgresql_example.js",
     "test": "vitest run"
   },
   "dependencies": {
     "@langchain/community": "^0.3.57",
     "@langchain/core": "^0.3.78",
     "@langchain/langgraph": "^0.4.9",
+    "@langchain/langgraph-checkpoint-postgres": "^0.1.2",
     "@langchain/openai": "^0.6.14",
+    "@types/pg": "^8.15.5",
+    "pg": "^8.16.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.7.4",
-  "rimraf": "^5.0.5",
-  "vitest": "^1.6.0",
+    "rimraf": "^5.0.5",
     "tsx": "^4.19.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.0"
   }
 }
