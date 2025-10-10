@@ -92,7 +92,7 @@ export function createMemoryCourseAgent(
     });
 }
 
-export async function createCourseAgent(options: CourseAgentOptions): Promise<ReactAgent> {
+async function createCourseAgent(options: CourseAgentOptions): Promise<ReactAgent> {
     const { srtPath, courseOutline, postgresConfig, postgresStorage, enablePostgresPersistence = true } = options;
     
     if (!srtPath || !courseOutline) {

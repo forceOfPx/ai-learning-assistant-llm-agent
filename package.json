@@ -6,7 +6,7 @@
     "example": "npm run build && node dist/debug/react_agent_example.js",
     "course": "npm run build && node dist/debug/course_agent_example.js",
     "history": "npm run build && node dist/debug/chat_with_history_example.js",
-    "persist": "npm run build && node dist/debug/postgresql_example.js",
+    "persist": "npm run build && node dist/debug/course_agent_persistence_example.js",
     "test": "vitest run"
   },
   "dependencies": {
